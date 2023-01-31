@@ -1,0 +1,15 @@
+version: '3.7'
+services:
+  app:
+    image: registry.elife.com.br/pedro-staging:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 3000:3000
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=production
+    command: npm start

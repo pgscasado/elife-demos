@@ -1,6 +1,10 @@
+import '@picocss/pico'
 import '@/styles/globals.css'
-import type { AppProps } from 'next/app'
+import { trpc } from '@/util/trpc'
+import type { AppProps, AppType } from 'next/app'
 
-export default function App({ Component, pageProps }: AppProps) {
-  return <Component {...pageProps} />
-}
+const App: AppType = ({ Component, pageProps }: AppProps) => (
+ <Component {...pageProps} />
+)
+
+export default trpc.withTRPC(App);

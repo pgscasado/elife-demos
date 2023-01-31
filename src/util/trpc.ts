@@ -7,7 +7,7 @@ function getBaseUrl() {
     return '';
   }
   if (process.env.NODE_ENV === 'production') {
-    return 'https://example.com';
+    return 'https://staging.pedro-demo.elife.com.br';
   }
   return `http://localhost:${process.env.PORT || 3000}`;
 }

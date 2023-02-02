@@ -1,20 +1,49 @@
 import Head from 'next/head'
-import { Inter } from '@next/font/google'
 import { useState } from 'react'
 import { trpc } from '@/util/trpc';
 
 // a landing page using pico.css
 export default function Home() {
   const [loading, setLoading] = useState(false);
-  const [input, setInput] = useState('');
-  const { data, error, refetch } = trpc.generateEmail.useQuery({ text: input }, {
+  const [needings, setNeedings] = useState('');
+  const [emailInput, setEmailInput] = useState('');
+  const email = trpc.generateEmail.useQuery({ text: needings }, {
     enabled: false
   });
+  const reply = trpc.generateReply.useQuery({ email: emailInput }, {
+    enabled: false
+  });
+  const aiModel = trpc.getAIModel.useQuery(undefined, {
+    onSuccess: (data) => {
+      setAIModelState(data);
+    }
+  });
+  const setAIModel = trpc.setAIModel.useMutation();
+  const [aiModelState, setAIModelState] = useState(aiModel?.data || 'text-davinci-003');
 
-  async function handleSubmit() {
+  async function handleSubmitEmailGenerator() {
     setLoading(true);
-    await refetch();
-    console.log(data);
+    await email.refetch();
+    setLoading(false);
+  }
+  async function handleSubmitReplyGenerator() {
+    setLoading(true);
+    await reply.refetch();
+    setLoading(false);
+  }
+  async function handleChangeAIModel(value: string) {
+    setLoading(true);
+    if (value === aiModelState) return;
+    if (
+      value !== 'text-davinci-003' &&
+      value !== 'text-curie-001' &&
+      value !== 'text-babbage-001' &&
+      value !== 'text-ada-001'
+    ) {
+      return;
+    }
+    await setAIModel.mutateAsync(value);
+    await aiModel.refetch();
     setLoading(false);
   }
   return (
@@ -30,26 +59,58 @@ export default function Home() {
           <h2>Teste com Next.js 13 e tRPC v10</h2>
           <h3>App para sugerir email de acordo com a necessidade apontada</h3>
         </hgroup>
-        <article>
-          <header>
-            <hgroup>
-              <h3>Descreva a necessidade</h3>
-              <h5>Ex: Email para notificar os clientes do meu banco de dados sobre o lançamento da minha plataforma de atendimento multi-canal chamada &quot;Patendimento&quot;</h5>
-            </hgroup>
-          </header>
-          <input type="textbox" name="input" id="text-input" onChange={(e) => setInput(e.target.value)}/>
-          <button onClick={handleSubmit} aria-busy={loading ? 'true' : 'false'} disabled={loading}>Enviar</button>
-          <footer>
-            { data ? data.trim().split("\n").map((item, idx) => {
-              return (
-                <span key={idx}>
-                  {item}
-                  <br/>
-                </span>
-              )
-            }) : null }
-          </footer>
-        </article>
+        <select value={aiModelState} onChange={(evt) => handleChangeAIModel(evt.target.value)}>
+          <option value="text-davinci-003">Davinci</option>
+          <option value="text-curie-001">Curie</option>
+          <option value="text-babbage-001">Babbage</option>
+          <option value="text-ada-001">Ada</option>
+        </select>
+        <details>
+          <summary>Gerar e-mail</summary> 
+          <article>
+            <header>
+              <hgroup>
+                <h3>Descreva a necessidade</h3>
+                <h5>Ex: Email para notificar os clientes do meu banco de dados sobre o lançamento da minha plataforma de atendimento multi-canal chamada &quot;Patendimento&quot;</h5>
+              </hgroup>
+            </header>
+            <input type="text" name="input" id="text-input" onChange={(e) => setNeedings(e.target.value)}/>
+            <button onClick={handleSubmitEmailGenerator} aria-busy={loading ? 'true' : 'false'} disabled={loading}>Enviar</button>
+            <footer>
+              { email.data ? email.data.trim().split("\n").map((item, idx) => {
+                return (
+                  <span key={idx}>
+                    {item}
+                    <br/>
+                  </span>
+                )
+              }) : null }
+            </footer>
+          </article>
+        </details>
+        <details>
+          <summary>Gerador de respostas</summary>
+          <article>
+            <header>
+              <hgroup>
+                <h3>Cole aqui o e-mail</h3>
+                <h5>Ex: Olá, tudo bem? Meu nome é João e sou o CEO da Patendimento, uma plataforma de atendimento multi-canal que está prestes a ser lançada. Gostaria de saber se vocês tem interesse em receber mais informações sobre o produto.</h5>
+              </hgroup>
+            </header>
+            <textarea name="input" id="text-input" rows={7} onChange={(e) => setEmailInput(e.target.value)}/>
+            <button onClick={handleSubmitReplyGenerator} aria-busy={loading ? 'true' : 'false'} disabled={loading}>Enviar</button>
+            <footer>
+              { reply.data ? reply.data.trim().split("\n").map((item, idx) => {
+                return (
+                  <span key={idx}>
+                    {item}
+                    <br/>
+                  </span>
+                )
+              }) : null }
+            </footer>
+          </article>
+        </details>
       </main>
     </>
   )
